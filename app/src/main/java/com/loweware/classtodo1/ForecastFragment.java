@@ -12,6 +12,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
+import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import com.google.api.client.extensions.android.http.AndroidHttp;
@@ -41,6 +42,9 @@ public class ForecastFragment extends Fragment {
     int FORECAST_DAYS = 14;  // TODO: 12/3/2015  - CREATE USER SETTING FOR FORECAST_DAYS
     String mEventQuery = "*";// TODO: 12/3/2015 - CREATE EVENT QUERY TEXTBOX
 
+    public ProgressBar mSpinner;
+
+
     public ForecastFragment() {
     }
 
@@ -64,6 +68,7 @@ public class ForecastFragment extends Fragment {
         int id = item.getItemId();
         if (id == R.id.action_refresh) {
             FetchDataTask weatherTask = new FetchDataTask(MainActivity.mCredential);
+            //FetchDataTask weatherTask = new FetchDataTask(((MainActivity)getActivity()).mCredential);
             weatherTask.execute();
             return true;
         }
@@ -73,18 +78,25 @@ public class ForecastFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
 
+
+
         // Create some dummy data for the ListView.  Here's a sample weekly forecast
-        String[] data = {""};
+        String[] data = {"Hello",
+                         "World"};
+
         List<String> weekForecast = new ArrayList<>(Arrays.asList(data));
 
         mForecastAdapter =
                 new ArrayAdapter<>(
-                        getActivity(), // The current context (this activity)
-                        R.layout.list_item_forecast, // The name of the layout ID.
-                        R.id.list_item_forecast_textview, // The ID of the textview to populate.
+                        getActivity(),                      // The current context (this activity)
+                        R.layout.list_item_forecast,        // The name of the layout ID.
+                        R.id.list_item_forecast_textview,   // The ID of the textview to populate.
                         weekForecast);
 
-        View rootView = inflater.inflate(R.layout.content_main, container, false);
+        View rootView = inflater.inflate(R.layout.fragment_main, container, false);
+
+        mSpinner = (ProgressBar)rootView.findViewById(R.id.progressBar1);
+        mSpinner.setVisibility(View.GONE);
 
         // Get a reference to the ListView, and attach this adapter to it.
         ListView listView = (ListView) rootView.findViewById(R.id.listview_forecast);
@@ -104,6 +116,8 @@ public class ForecastFragment extends Fragment {
         private Exception mLastError = null;
 
         public FetchDataTask(GoogleAccountCredential credential) {
+
+            Log.i(LOG_TAG, "IN FetchDataTask");
             HttpTransport transport = AndroidHttp.newCompatibleTransport();
             JsonFactory jsonFactory = JacksonFactory.getDefaultInstance();
             mService = new com.google.api.services.calendar.Calendar.Builder(
@@ -129,9 +143,12 @@ public class ForecastFragment extends Fragment {
         }
 
         private List<String> getDataFromApi() throws IOException {
+
+            Log.i(LOG_TAG, "IN getDataFromApi");
             //List<String> eventStrings = getEventsByCalendarId("apps.edina.k12.mn.us_45hcc88tr8ds5m6h1grloacuak@group.calendar.google.com");
             List<String> eventStrings = getEventsByCalendarId("enaaj9tnb8tme3ca5cb8a17iq1lu5dbv@import.calendar.google.com");
             //List<String> eventStrings = getCalendars();//"enaaj9tnb8tme3ca5cb8a17iq1lu5dbv@import.calendar.google.com");
+            Log.i(LOG_TAG, "OUT getDataFromApi");
             return eventStrings;
         }
 
@@ -183,10 +200,7 @@ public class ForecastFragment extends Fragment {
             Log.i(LOG_TAG, "IN getEventsByCalendarId");
 
             DateTime timeMin = new DateTime(System.currentTimeMillis());
-            //DateTime timeMax = timeMin +  (1000 * 60 * 60 * 24);
             DateTime timeMax = new DateTime(timeMin.getValue() + (1000 * 60 * 60 * 24 * FORECAST_DAYS));
-
-            Log.i(LOG_TAG, "timeMax = " + timeMax.toString());
 
             List<String> eventStrings = new ArrayList<>();
             Events events = mService.events().list(calendarId)
@@ -198,7 +212,7 @@ public class ForecastFragment extends Fragment {
                     .setFields("kind,items(id,description, summary, start/date,end/date)")
                     .set("q", mEventQuery)
                     .execute();
-            //Log.i(LOG_TAG, events.getItems().size());
+
             List<Event> items = events.getItems();
 
             for (Event event : items) {
@@ -208,41 +222,50 @@ public class ForecastFragment extends Fragment {
                     start = event.getStart().getDate();
                 }
                 if (endDate == null) { // All-day events don't have end times, so just use the end date.
-                    endDate = event.getEnd().getDate();
+                    //endDate = event.getEnd().getDate();
                 }
                 Log.i(LOG_TAG, "In Loop " + event.getSummary());
                 eventStrings.add(String.format("(%s) %s - %s ", start, event.getSummary(), event.getDescription()));
                 //eventStrings.add("");
             }
+            Log.i(LOG_TAG, "OUT getEventsByCalendarId");
             return eventStrings;
         }
 
         @Override
         protected void onPreExecute() {
+
             mForecastAdapter.clear();
+            mSpinner.setVisibility(View.VISIBLE);
             //mProgress.show();
         }
 
         @Override
         protected void onPostExecute(List<String> output) {
             // mProgress.hide();
+            mSpinner.setVisibility(View.GONE);
+            Log.i(LOG_TAG, "IN onPostExecute");
             if (output == null || output.size() == 0) {
                 Toast.makeText(getActivity(), "No results returned.", Toast.LENGTH_LONG).show();
             } else {
                 for(String dayForecastStr : output) {
+                    Log.i(LOG_TAG, "Output: " + dayForecastStr);
                     mForecastAdapter.add(dayForecastStr);
                 }
             }
+            Log.i(LOG_TAG, "OUT onPostExecute");
         }
 
         @Override
         protected void onCancelled() {
             // mProgress.hide();
+            mSpinner.setVisibility(View.GONE);
+            Log.i(LOG_TAG, "IN onCancelled");
             if (mLastError != null) {
                 if (mLastError instanceof GooglePlayServicesAvailabilityIOException) {
-//                        showGooglePlayServicesAvailabilityErrorDialog(
-//                                ((GooglePlayServicesAvailabilityIOException) mLastError)
-//                                        .getConnectionStatusCode());
+//                    ((MainActivity)getActivity()).showGooglePlayServicesAvailabilityErrorDialog(
+//                            ((GooglePlayServicesAvailabilityIOException) mLastError)
+//                                    .getConnectionStatusCode());
                     Toast.makeText(getActivity(), mLastError.toString(), Toast.LENGTH_LONG).show();
 
                 } else if (mLastError instanceof UserRecoverableAuthIOException) {
@@ -250,13 +273,12 @@ public class ForecastFragment extends Fragment {
                             ((UserRecoverableAuthIOException) mLastError).getIntent(),
                             MainActivity.REQUEST_AUTHORIZATION);
                 } else {
-                    //Toast.makeText(MainActivity.this, "The following error occurred:\n" + mLastError.getMessage(), Toast.LENGTH_LONG).show();
                     Toast.makeText(getActivity(), "The following error occurred:\n" + mLastError.getMessage(), Toast.LENGTH_LONG).show();
                 }
             } else {
-                //Toast.makeText(MainActivity.this, "Request cancelled.", Toast.LENGTH_LONG).show();
                 Toast.makeText(getActivity(), "Request cancelled.", Toast.LENGTH_LONG).show();
             }
+            Log.i(LOG_TAG, "OUT onCancelled");
         }
     }
 }
