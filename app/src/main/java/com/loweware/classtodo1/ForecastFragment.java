@@ -44,7 +44,6 @@ public class ForecastFragment extends Fragment {
 
     public ProgressBar mSpinner;
 
-
     public ForecastFragment() {
     }
 
@@ -78,11 +77,8 @@ public class ForecastFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
 
-
-
         // Create some dummy data for the ListView.  Here's a sample weekly forecast
-        String[] data = {"Hello",
-                         "World"};
+        String[] data = {""};
 
         List<String> weekForecast = new ArrayList<>(Arrays.asList(data));
 
