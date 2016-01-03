@@ -35,6 +35,9 @@ public class MainActivity extends AppCompatActivity {
     private static final String PREF_ACCOUNT_NAME = "accountName";
     private static final String[] SCOPES = {CalendarScopes.CALENDAR_READONLY};
 
+//    public static  int FORECAST_DAYS = 14;  // TODO: 12/3/2015  - CREATE USER SETTING FOR FORECAST_DAYS
+//    public static String mEventQuery = "*";// TODO: 12/3/2015 - CREATE EVENT QUERY TEXTBOX
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -71,10 +74,19 @@ public class MainActivity extends AppCompatActivity {
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
 
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
+        if (id == R.id.action_account_change)
+        {
+            chooseAccount();
+            refreshResults();
             return true;
         }
+
+        if (id == R.id.action_settings)
+        {
+            startActivity(new Intent(this, SettingsActivity.class));
+            return true;
+        }
+
 
         return super.onOptionsItemSelected(item);
     }
@@ -146,13 +158,15 @@ public class MainActivity extends AppCompatActivity {
      * user can pick an account.
      */
     private void refreshResults() {
-
+        //Toast.makeText(this, "Enter refreshResults", Toast.LENGTH_LONG).show();
         Log.i(LOG_TAG, "Enter refreshResults");
         if (mCredential.getSelectedAccountName() == null) {
             chooseAccount();
         } else {
             if (isDeviceOnline()) {
-                //new FetchDataTask(mCredential).execute();
+                //new ((MainActivity)executeFetchDataTask(mCredential).execute();
+                //new executeFetchDataTask(mCredential).execute();
+                //((ForecastFragment)e
             } else {
                 Toast.makeText(this, "No network connection available.", Toast.LENGTH_LONG).show();
             }

@@ -1,5 +1,32 @@
 <resources>
+
     <string name="app_name">ClassToDo_1</string>
     <string name="action_settings">Settings</string>
+    <string name="action_account_change">Switch Account</string>
     <string name="action_refresh">Refresh</string>
+
+    <string name="title_activity_detail">Details</string>
+    <string name="title_activity_Settings">Settings</string>
+    <string name="hello_world">Hello World!</string>
+    <string name="title_activity_settings">Settings</string>
+
+    <!-- Strings related to Settings -->
+    <string name="pref_header_general">General</string>
+
+    <string name="pref_title_display_name">Display name</string>
+    <string name="pref_default_display_name">David Lowe</string>
+    <string name="pref_title_display_weeks">Weeks to display</string>
+    <string-array name="pref_display_weeks_list_titles">
+        <item>One Week</item>
+        <item>Two Weeks</item>
+        <item>Three Weeks</item>
+        <item>Four Weeks</item>
+    </string-array>
+    <string-array name="pref_display_weeks_list_values">
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+        <item>4</item>
+    </string-array>
+
 </resources>

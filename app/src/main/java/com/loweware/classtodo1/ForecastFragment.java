@@ -1,5 +1,8 @@
 package com.loweware.classtodo1;
 
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.preference.PreferenceManager;
 import android.support.v4.app.Fragment;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -10,6 +13,7 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.ProgressBar;
@@ -39,10 +43,9 @@ import java.util.List;
 public class ForecastFragment extends Fragment {
 
     ArrayAdapter<String> mForecastAdapter;
+    public ProgressBar mSpinner;
     int FORECAST_DAYS = 14;  // TODO: 12/3/2015  - CREATE USER SETTING FOR FORECAST_DAYS
     String mEventQuery = "*";// TODO: 12/3/2015 - CREATE EVENT QUERY TEXTBOX
-
-    public ProgressBar mSpinner;
 
     public ForecastFragment() {
     }
@@ -66,9 +69,7 @@ public class ForecastFragment extends Fragment {
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
         if (id == R.id.action_refresh) {
-            FetchDataTask weatherTask = new FetchDataTask(MainActivity.mCredential);
-            //FetchDataTask weatherTask = new FetchDataTask(((MainActivity)getActivity()).mCredential);
-            weatherTask.execute();
+            updateCalendarData();
             return true;
         }
         return super.onOptionsItemSelected(item);
@@ -97,8 +98,39 @@ public class ForecastFragment extends Fragment {
         // Get a reference to the ListView, and attach this adapter to it.
         ListView listView = (ListView) rootView.findViewById(R.id.listview_forecast);
         listView.setAdapter(mForecastAdapter);
+        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int position, long l) {
+                String forecast = mForecastAdapter.getItem(position);
+                Intent intent = new Intent(getActivity(), DetailActivity.class)
+                        .putExtra(Intent.EXTRA_TEXT, forecast);
+                startActivity(intent);
+            }
+        });
 
         return rootView;
+    }
+
+    private void updateCalendarData() {
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getActivity());
+
+        String days = prefs.getString("display_weeks_list", "1");
+
+        Toast.makeText(getActivity(), days, Toast.LENGTH_LONG).show();
+
+        FetchDataTask weatherTask = new FetchDataTask(MainActivity.mCredential);
+        weatherTask.execute();
+//        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getActivity());
+//        String location = prefs.getString(getString(R.string.pref_location_key),getString(R.string.pref_location_default));
+//        FetchCalendarDataTask task = new FetchCalendarDataTask(MainActivity.mCredential, mForecastAdapter, FORECAST_DAYS);
+//        task.execute();
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        updateCalendarData();
     }
 
     /**
@@ -136,6 +168,50 @@ public class ForecastFragment extends Fragment {
                 cancel(true);
                 return null;
             }
+        }
+
+        @Override
+        protected void onPreExecute() {
+            mForecastAdapter.clear();
+            mSpinner.setVisibility(View.VISIBLE);
+        }
+
+        @Override
+        protected void onPostExecute(List<String> output) {
+
+            mSpinner.setVisibility(View.GONE);
+            Log.i(LOG_TAG, "IN onPostExecute");
+            if (output == null || output.size() == 0) {
+                Toast.makeText(getActivity(), "No results returned.", Toast.LENGTH_LONG).show();
+            } else {
+                for(String dayForecastStr : output) {
+                    //Log.i(LOG_TAG, "Output: " + dayForecastStr);
+                    mForecastAdapter.add(dayForecastStr);
+                }
+            }
+            Log.i(LOG_TAG, "OUT onPostExecute");
+        }
+
+        @Override
+        protected void onCancelled() {
+            // mProgress.hide();
+            mSpinner.setVisibility(View.GONE);
+            Log.i(LOG_TAG, "IN onCancelled");
+            if (mLastError != null) {
+                if (mLastError instanceof GooglePlayServicesAvailabilityIOException) {
+                    Toast.makeText(getActivity(), mLastError.toString(), Toast.LENGTH_LONG).show();
+
+                } else if (mLastError instanceof UserRecoverableAuthIOException) {
+                    startActivityForResult(
+                            ((UserRecoverableAuthIOException) mLastError).getIntent(),
+                            MainActivity.REQUEST_AUTHORIZATION);
+                } else {
+                    Toast.makeText(getActivity(), "The following error occurred:\n" + mLastError.getMessage(), Toast.LENGTH_LONG).show();
+                }
+            } else {
+                Toast.makeText(getActivity(), "Request cancelled.", Toast.LENGTH_LONG).show();
+            }
+            Log.i(LOG_TAG, "OUT onCancelled");
         }
 
         private List<String> getDataFromApi() throws IOException {
@@ -226,55 +302,6 @@ public class ForecastFragment extends Fragment {
             }
             Log.i(LOG_TAG, "OUT getEventsByCalendarId");
             return eventStrings;
-        }
-
-        @Override
-        protected void onPreExecute() {
-
-            mForecastAdapter.clear();
-            mSpinner.setVisibility(View.VISIBLE);
-            //mProgress.show();
-        }
-
-        @Override
-        protected void onPostExecute(List<String> output) {
-            // mProgress.hide();
-            mSpinner.setVisibility(View.GONE);
-            Log.i(LOG_TAG, "IN onPostExecute");
-            if (output == null || output.size() == 0) {
-                Toast.makeText(getActivity(), "No results returned.", Toast.LENGTH_LONG).show();
-            } else {
-                for(String dayForecastStr : output) {
-                    Log.i(LOG_TAG, "Output: " + dayForecastStr);
-                    mForecastAdapter.add(dayForecastStr);
-                }
-            }
-            Log.i(LOG_TAG, "OUT onPostExecute");
-        }
-
-        @Override
-        protected void onCancelled() {
-            // mProgress.hide();
-            mSpinner.setVisibility(View.GONE);
-            Log.i(LOG_TAG, "IN onCancelled");
-            if (mLastError != null) {
-                if (mLastError instanceof GooglePlayServicesAvailabilityIOException) {
-//                    ((MainActivity)getActivity()).showGooglePlayServicesAvailabilityErrorDialog(
-//                            ((GooglePlayServicesAvailabilityIOException) mLastError)
-//                                    .getConnectionStatusCode());
-                    Toast.makeText(getActivity(), mLastError.toString(), Toast.LENGTH_LONG).show();
-
-                } else if (mLastError instanceof UserRecoverableAuthIOException) {
-                    startActivityForResult(
-                            ((UserRecoverableAuthIOException) mLastError).getIntent(),
-                            MainActivity.REQUEST_AUTHORIZATION);
-                } else {
-                    Toast.makeText(getActivity(), "The following error occurred:\n" + mLastError.getMessage(), Toast.LENGTH_LONG).show();
-                }
-            } else {
-                Toast.makeText(getActivity(), "Request cancelled.", Toast.LENGTH_LONG).show();
-            }
-            Log.i(LOG_TAG, "OUT onCancelled");
         }
     }
 }
