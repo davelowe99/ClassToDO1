@@ -44,7 +44,7 @@ public class ForecastFragment extends Fragment {
 
     ArrayAdapter<String> mForecastAdapter;
     public ProgressBar mSpinner;
-    int FORECAST_DAYS = 14;  // TODO: 12/3/2015  - CREATE USER SETTING FOR FORECAST_DAYS
+    //int mForecastDuration = 7;  // TODO: 12/3/2015  - CREATE USER SETTING FOR mForecastDuration
     String mEventQuery = "*";// TODO: 12/3/2015 - CREATE EVENT QUERY TEXTBOX
 
     public ForecastFragment() {
@@ -112,196 +112,19 @@ public class ForecastFragment extends Fragment {
         return rootView;
     }
 
-    private void updateCalendarData() {
-        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getActivity());
-
-        String days = prefs.getString("display_weeks_list", "1");
-
-        Toast.makeText(getActivity(), days, Toast.LENGTH_LONG).show();
-
-        FetchDataTask weatherTask = new FetchDataTask(MainActivity.mCredential);
-        weatherTask.execute();
-//        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getActivity());
-//        String location = prefs.getString(getString(R.string.pref_location_key),getString(R.string.pref_location_default));
-//        FetchCalendarDataTask task = new FetchCalendarDataTask(MainActivity.mCredential, mForecastAdapter, FORECAST_DAYS);
-//        task.execute();
-    }
-
     @Override
     public void onStart() {
         super.onStart();
         updateCalendarData();
     }
 
-    /**
-     * An asynchronous task that handles the Google Calendar API call.
-     * Placing the API calls in their own task ensures the UI stays responsive.
-     */
-    public class FetchDataTask extends AsyncTask<Void, Void, List<String>> {
+    private void updateCalendarData() {
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getActivity());
+        String durationStr = prefs.getString("display_weeks_list", "7");
+        int duration = Integer.parseInt(durationStr);
 
-        public final String LOG_TAG = FetchDataTask.class.getSimpleName();
-        private com.google.api.services.calendar.Calendar mService = null;
-        private Exception mLastError = null;
-
-        public FetchDataTask(GoogleAccountCredential credential) {
-
-            Log.i(LOG_TAG, "IN FetchDataTask");
-            HttpTransport transport = AndroidHttp.newCompatibleTransport();
-            JsonFactory jsonFactory = JacksonFactory.getDefaultInstance();
-            mService = new com.google.api.services.calendar.Calendar.Builder(
-                    transport, jsonFactory, credential)
-                    .setApplicationName("Google Calendar API Android Quickstart")
-                    .build();
-        }
-
-        /**
-         * Background task to call Google Calendar API.
-         *
-         * @param params no parameters needed for this task.
-         */
-        @Override
-        protected List<String> doInBackground(Void... params) {
-            try {
-                return getDataFromApi();
-            } catch (Exception e) {
-                mLastError = e;
-                cancel(true);
-                return null;
-            }
-        }
-
-        @Override
-        protected void onPreExecute() {
-            mForecastAdapter.clear();
-            mSpinner.setVisibility(View.VISIBLE);
-        }
-
-        @Override
-        protected void onPostExecute(List<String> output) {
-
-            mSpinner.setVisibility(View.GONE);
-            Log.i(LOG_TAG, "IN onPostExecute");
-            if (output == null || output.size() == 0) {
-                Toast.makeText(getActivity(), "No results returned.", Toast.LENGTH_LONG).show();
-            } else {
-                for(String dayForecastStr : output) {
-                    //Log.i(LOG_TAG, "Output: " + dayForecastStr);
-                    mForecastAdapter.add(dayForecastStr);
-                }
-            }
-            Log.i(LOG_TAG, "OUT onPostExecute");
-        }
-
-        @Override
-        protected void onCancelled() {
-            // mProgress.hide();
-            mSpinner.setVisibility(View.GONE);
-            Log.i(LOG_TAG, "IN onCancelled");
-            if (mLastError != null) {
-                if (mLastError instanceof GooglePlayServicesAvailabilityIOException) {
-                    Toast.makeText(getActivity(), mLastError.toString(), Toast.LENGTH_LONG).show();
-
-                } else if (mLastError instanceof UserRecoverableAuthIOException) {
-                    startActivityForResult(
-                            ((UserRecoverableAuthIOException) mLastError).getIntent(),
-                            MainActivity.REQUEST_AUTHORIZATION);
-                } else {
-                    Toast.makeText(getActivity(), "The following error occurred:\n" + mLastError.getMessage(), Toast.LENGTH_LONG).show();
-                }
-            } else {
-                Toast.makeText(getActivity(), "Request cancelled.", Toast.LENGTH_LONG).show();
-            }
-            Log.i(LOG_TAG, "OUT onCancelled");
-        }
-
-        private List<String> getDataFromApi() throws IOException {
-
-            Log.i(LOG_TAG, "IN getDataFromApi");
-            //List<String> eventStrings = getEventsByCalendarId("apps.edina.k12.mn.us_45hcc88tr8ds5m6h1grloacuak@group.calendar.google.com");
-            List<String> eventStrings = getEventsByCalendarId("enaaj9tnb8tme3ca5cb8a17iq1lu5dbv@import.calendar.google.com");
-            //List<String> eventStrings = getCalendars();//"enaaj9tnb8tme3ca5cb8a17iq1lu5dbv@import.calendar.google.com");
-            Log.i(LOG_TAG, "OUT getDataFromApi");
-            return eventStrings;
-        }
-
-        /**
-         * Fetch a list of the next 10 events from the primary calendar.
-         *
-         * @return List of Strings describing returned events.
-         * @throws IOException Get a list of calendars where selected=true
-         */
-        private List<String> getCalendars() throws IOException {
-            // List the next 10 events from the primary calendar.
-            Log.i(LOG_TAG, "Enter getDataFromApi");
-            List<String> calStrings = new ArrayList<>();
-            String calSummary;
-
-            // Iterate through entries in calendar list
-            String pageToken = null;
-            do {
-                CalendarList calList = mService.calendarList().list()
-                        .setPageToken(pageToken)
-                        .execute();
-
-                List<CalendarListEntry> items = calList.getItems();
-
-                for (CalendarListEntry calListEntry : items) {
-                    if (calListEntry.getSummaryOverride() == null) {
-                        calSummary = calListEntry.getSummary();
-                    } else {
-                        calSummary = calListEntry.getSummaryOverride();
-                    }
-                    calStrings.add(String.format("%s (%s)", calSummary, calListEntry.getId()));
-                }
-                pageToken = calList.getNextPageToken();
-
-            } while (pageToken != null);
-
-            return calStrings;
-        }
-
-        //Get a list of events in all calendars
-        private List<String> getEventsAll(List<String> calendars) throws IOException {
-            List<String> eventStrings = new ArrayList<>();
-            return eventStrings;
-        }
-
-        //Utility function. Get a list of events in calendar with calendarId
-        private List<String> getEventsByCalendarId(String calendarId) throws IOException {
-            // List the next 10 events from the primary calendar.
-            Log.i(LOG_TAG, "IN getEventsByCalendarId");
-
-            DateTime timeMin = new DateTime(System.currentTimeMillis());
-            DateTime timeMax = new DateTime(timeMin.getValue() + (1000 * 60 * 60 * 24 * FORECAST_DAYS));
-
-            List<String> eventStrings = new ArrayList<>();
-            Events events = mService.events().list(calendarId)
-                    .setMaxResults(10)
-                    .setTimeMin(timeMin)
-                    .setTimeMax(timeMax)
-                    .setOrderBy("startTime")
-                    .setSingleEvents(true)
-                    .setFields("kind,items(id,description, summary, start/date,end/date)")
-                    .set("q", mEventQuery)
-                    .execute();
-
-            List<Event> items = events.getItems();
-
-            for (Event event : items) {
-                DateTime start = event.getStart().getDateTime();
-                DateTime endDate = event.getEnd().getDateTime();
-                if (start == null) { // All-day events don't have start times, so just use the start date.
-                    start = event.getStart().getDate();
-                }
-                if (endDate == null) { // All-day events don't have end times, so just use the end date.
-                    //endDate = event.getEnd().getDate();
-                }
-                Log.i(LOG_TAG, "In Loop " + event.getSummary());
-                eventStrings.add(String.format("(%s) %s - %s ", start, event.getSummary(), event.getDescription()));
-                //eventStrings.add("");
-            }
-            Log.i(LOG_TAG, "OUT getEventsByCalendarId");
-            return eventStrings;
-        }
+        Toast.makeText(getActivity(), durationStr, Toast.LENGTH_LONG).show();
+        FetchCalendarDataTask weatherTask = new FetchCalendarDataTask(MainActivity.mCredential, duration, getContext(), mForecastAdapter, mEventQuery);
+        weatherTask.execute();
     }
 }

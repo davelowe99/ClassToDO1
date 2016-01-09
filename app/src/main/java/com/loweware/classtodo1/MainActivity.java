@@ -35,7 +35,7 @@ public class MainActivity extends AppCompatActivity {
     private static final String PREF_ACCOUNT_NAME = "accountName";
     private static final String[] SCOPES = {CalendarScopes.CALENDAR_READONLY};
 
-//    public static  int FORECAST_DAYS = 14;  // TODO: 12/3/2015  - CREATE USER SETTING FOR FORECAST_DAYS
+//    public static  int mForecastDuration = 14;  // TODO: 12/3/2015  - CREATE USER SETTING FOR mForecastDuration
 //    public static String mEventQuery = "*";// TODO: 12/3/2015 - CREATE EVENT QUERY TEXTBOX
 
     @Override

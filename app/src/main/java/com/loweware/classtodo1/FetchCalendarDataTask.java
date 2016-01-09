@@ -1,5 +1,6 @@
 package com.loweware.classtodo1;
 
+import android.content.Context;
 import android.os.AsyncTask;
 import android.util.Log;
 import android.view.View;
@@ -24,32 +25,34 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Created by david on 1/1/2016.
+ * Created by david on 1/9/2016.
  */
 public class FetchCalendarDataTask extends AsyncTask<Void, Void, List<String>> {
 
     public final String LOG_TAG = FetchCalendarDataTask.class.getSimpleName();
     private com.google.api.services.calendar.Calendar mService = null;
     private Exception mLastError = null;
-
+    private int mDuration;
+    String mEventQuery = "*";
+    private ArrayAdapter<String> mForecastAdapter;
+    private final Context mContext;
     ArrayList mErrors = new ArrayList();
 
-    ArrayAdapter<String> mForecastAdapter;
-    int mDays;  // TODO: 12/3/2015  - CREATE USER SETTING FOR FORECAST_DAYS
-    String mEventQuery = "*";// TODO: 12/3/2015 - CREATE EVENT QUERY TEXTBOX
 
-    public FetchCalendarDataTask(GoogleAccountCredential credential, ArrayAdapter<String> adapter, int days) {
+    public FetchCalendarDataTask(GoogleAccountCredential credential, int duration, Context context, ArrayAdapter<String> forecastAdapter, String query) {
 
-        Log.i(LOG_TAG, "IN FetchDataTask");
+        Log.i(LOG_TAG, "IN FetchCalendarDataTask");
+        mDuration = duration;
+        mContext = context;
+        mForecastAdapter = forecastAdapter;
+        mEventQuery = query;
+
         HttpTransport transport = AndroidHttp.newCompatibleTransport();
         JsonFactory jsonFactory = JacksonFactory.getDefaultInstance();
         mService = new com.google.api.services.calendar.Calendar.Builder(
                 transport, jsonFactory, credential)
                 .setApplicationName("Google Calendar API Android Quickstart")
                 .build();
-
-        mForecastAdapter = adapter;
-        mDays = days;
     }
 
     /**
@@ -123,7 +126,7 @@ public class FetchCalendarDataTask extends AsyncTask<Void, Void, List<String>> {
         Log.i(LOG_TAG, "IN getEventsByCalendarId");
 
         DateTime timeMin = new DateTime(System.currentTimeMillis());
-        DateTime timeMax = new DateTime(timeMin.getValue() + (1000 * 60 * 60 * 24 * mDays));
+        DateTime timeMax = new DateTime(timeMin.getValue() + (1000 * 60 * 60 * 24 * mDuration));
 
         List<String> eventStrings = new ArrayList<>();
         Events events = mService.events().list(calendarId)
