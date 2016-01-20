@@ -121,10 +121,10 @@ public class ForecastFragment extends Fragment {
     private void updateCalendarData() {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getActivity());
         String durationStr = prefs.getString("display_weeks_list", "7");
-        int duration = Integer.parseInt(durationStr);
+        //int duration = Integer.parseInt(durationStr);
 
         Toast.makeText(getActivity(), durationStr, Toast.LENGTH_LONG).show();
-        FetchCalendarDataTask weatherTask = new FetchCalendarDataTask(MainActivity.mCredential, duration, getContext(), mForecastAdapter, mEventQuery);
-        weatherTask.execute();
+        FetchCalendarDataTask weatherTask = new FetchCalendarDataTask(MainActivity.mCredential, getContext(), mForecastAdapter);
+        weatherTask.execute(mEventQuery, durationStr);
     }
 }

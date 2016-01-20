@@ -21,7 +21,7 @@ public class TestDb extends AndroidTestCase {
         mContext.deleteDatabase(CalendarDbHelper.DATABASE_NAME);
     }
 
-    /*
+    /**
         This function gets called before each test is executed to delete the database.  This makes
         sure that we always have a clean test.
      */
@@ -30,7 +30,7 @@ public class TestDb extends AndroidTestCase {
         deleteTheDatabase();
     }
 
-    /*
+    /**
         Students: Uncomment this test once you've written the code to create the Location
         table.  Note that you will have to have chosen the same column names that I did in
         my solution for this test to compile, so if you haven't yet done that, this is
@@ -46,13 +46,12 @@ public class TestDb extends AndroidTestCase {
         Log.i(LOG_TAG, "IN - TestDb.testCreateDb()");
 
         final HashSet<String> tableNameHashSet = new HashSet<String>();
-        tableNameHashSet.add(CalendarContract.DayCycleEntry.TABLE_NAME);
         tableNameHashSet.add(CalendarContract.ScheduleEntry.TABLE_NAME);
-        tableNameHashSet.add(CalendarContract.EventEntry.TABLE_NAME);
+//        tableNameHashSet.add(CalendarContract.DayCycleEntry.TABLE_NAME);
+//        tableNameHashSet.add(CalendarContract.EventEntry.TABLE_NAME);
 
         mContext.deleteDatabase(CalendarDbHelper.DATABASE_NAME);
-        SQLiteDatabase db = new CalendarDbHelper(
-                this.mContext).getWritableDatabase();
+        SQLiteDatabase db = new CalendarDbHelper(this.mContext).getWritableDatabase();
         assertEquals(true, db.isOpen());
 
         // have we created the tables we want?
@@ -72,53 +71,60 @@ public class TestDb extends AndroidTestCase {
                 tableNameHashSet.isEmpty());
 
         // now, do our tables contain the correct columns?
-        c = db.rawQuery("PRAGMA table_info(" + CalendarContract.DayCycleEntry.TABLE_NAME + ")",
+        c = db.rawQuery("PRAGMA table_info(" + CalendarContract.ScheduleEntry.TABLE_NAME + ")",
                 null);
 
         assertTrue("Error: This means that we were unable to query the database for table information.",
                 c.moveToFirst());
 
+        //TODO: Put a switch statement here to account for all the tables
         // Build a HashSet of all of the column names we want to look for
-        final HashSet<String> locationColumnHashSet = new HashSet<String>();
-        locationColumnHashSet.add(CalendarContract.DayCycleEntry._ID);
-        locationColumnHashSet.add(CalendarContract.DayCycleEntry.COLUMN_DAY_CYCLE);
-        locationColumnHashSet.add(CalendarContract.DayCycleEntry.COLUMN_DATE);
+        final HashSet<String> scheduleEntryColumnHashSet = new HashSet<String>();
+        scheduleEntryColumnHashSet.add(CalendarContract.ScheduleEntry._ID);
+        scheduleEntryColumnHashSet.add(CalendarContract.ScheduleEntry.COLUMN_ACCOUNT_NAME);
+        scheduleEntryColumnHashSet.add(CalendarContract.ScheduleEntry.COLUMN_CALENDAR_ID);
+        scheduleEntryColumnHashSet.add(CalendarContract.ScheduleEntry.COLUMN_DAY_CYCLE);
 
         int columnNameIndex = c.getColumnIndex("name");
         do {
             String columnName = c.getString(columnNameIndex);
-            locationColumnHashSet.remove(columnName);
+            scheduleEntryColumnHashSet.remove(columnName);
         } while(c.moveToNext());
 
         // if this fails, it means that your database doesn't contain all of the required location
         // entry columns
         assertTrue("Error: The database doesn't contain all of the required location entry columns",
-                locationColumnHashSet.isEmpty());
+                scheduleEntryColumnHashSet.isEmpty());
         db.close();
 
         Log.i(LOG_TAG, "OUT - TestDb.testCreateDb()");
     }
 
-    /*
+    /**
         Students:  Here is where you will build code to test that we can insert and query the
         database.  We've done a lot of work for you.  You'll want to look in TestUtilities
         where you can use the "createWeatherValues" function.  You can
         also make use of the validateCurrentRecord function from within TestUtilities.
      */
-    public void testDayCycleTable() {
-        ContentValues values = TestUtilities.createDayCycleValues();
-        tableTest(values, CalendarContract.DayCycleEntry.TABLE_NAME);
-    }
+//    public void testDayCycleTable() {
+//        ContentValues values = TestUtilities.createDayCycleValues();
+//        tableTest(values, CalendarContract.DayCycleEntry.TABLE_NAME);
+//    }
 
+//    public void testCalendarListTable() {
+//        ContentValues values = TestUtilities.createCalendarListValues();
+//        tableTest(values, CalendarContract.CalendarListEntry.TABLE_NAME);
+//    }
+//
     public void testScheduleTable() {
-        ContentValues values = TestUtilities.createScheduleValues();
+        ContentValues values = TestUtilities.createScheduleEntryValues();
         tableTest(values, CalendarContract.ScheduleEntry.TABLE_NAME);
     }
-
-    public void testEventTable() {
-        ContentValues values = TestUtilities.createEventValues();
-        tableTest(values, CalendarContract.EventEntry.TABLE_NAME);
-    }
+//
+//    public void testEventTable() {
+//        ContentValues values = TestUtilities.createEventEntryValues();
+//        tableTest(values, CalendarContract.EventEntry.TABLE_NAME);
+//    }
 
     private void tableTest(ContentValues values, String tableName) {
 
@@ -130,7 +136,7 @@ public class TestDb extends AndroidTestCase {
         SQLiteDatabase db = dbHelper.getWritableDatabase();
 
         // Second Step: Create dayCycle values
-        //ContentValues values = TestUtilities.createScheduleValues();
+        //ContentValues values = TestUtilities.createScheduleEntryValues();
 
         // Third Step: Insert ContentValues into database and get a row ID back
         long rowId = db.insert(tableName, null, values);

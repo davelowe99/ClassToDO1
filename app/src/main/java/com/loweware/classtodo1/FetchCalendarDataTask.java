@@ -27,25 +27,29 @@ import java.util.List;
 /**
  * Created by david on 1/9/2016.
  */
-public class FetchCalendarDataTask extends AsyncTask<Void, Void, List<String>> {
+public class FetchCalendarDataTask extends AsyncTask<String, Void, List<String>> {
 
     public final String LOG_TAG = FetchCalendarDataTask.class.getSimpleName();
     private com.google.api.services.calendar.Calendar mService = null;
     private Exception mLastError = null;
     private int mDuration;
-    String mEventQuery = "*";
+    private String mEventQuery = "*";
     private ArrayAdapter<String> mForecastAdapter;
+    private String mUserAccountName = "";
     private final Context mContext;
     ArrayList mErrors = new ArrayList();
 
 
-    public FetchCalendarDataTask(GoogleAccountCredential credential, int duration, Context context, ArrayAdapter<String> forecastAdapter, String query) {
+    public FetchCalendarDataTask(GoogleAccountCredential credential, Context context, ArrayAdapter<String> forecastAdapter) {
 
         Log.i(LOG_TAG, "IN FetchCalendarDataTask");
-        mDuration = duration;
+
         mContext = context;
         mForecastAdapter = forecastAdapter;
-        mEventQuery = query;
+        //mEventQuery = query;
+        mUserAccountName = credential.getSelectedAccountName();
+
+        Log.i(LOG_TAG, mUserAccountName);
 
         HttpTransport transport = AndroidHttp.newCompatibleTransport();
         JsonFactory jsonFactory = JacksonFactory.getDefaultInstance();
@@ -53,6 +57,8 @@ public class FetchCalendarDataTask extends AsyncTask<Void, Void, List<String>> {
                 transport, jsonFactory, credential)
                 .setApplicationName("Google Calendar API Android Quickstart")
                 .build();
+
+        Log.i(LOG_TAG, "OUT FetchCalendarDataTask");
     }
 
     /**
@@ -61,7 +67,11 @@ public class FetchCalendarDataTask extends AsyncTask<Void, Void, List<String>> {
      * @param params no parameters needed for this task.
      */
     @Override
-    protected List<String> doInBackground(Void... params) {
+    protected List<String> doInBackground(String... params) {
+
+        mEventQuery = params[0];
+        mDuration = Integer.parseInt(params[1]);
+
         try {
             return getDataFromApi();
         } catch (Exception e) {
